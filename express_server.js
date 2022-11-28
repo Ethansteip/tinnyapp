@@ -7,8 +7,14 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+// Route - homepage
 app.get("/", (req, res) => {
   res.send("Hello!");
+});
+
+// Route - Urls.json
+app.get("/urls.json", (req, res) => {
+  res.json(urlDatabase);
 });
 
 app.listen(PORT, () => {
