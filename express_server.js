@@ -2,10 +2,16 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 
+// Set the default view engine to ejs
+app.set('view engiine', 'ejs');
+
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
+
+// Will be using res.render('pages/home') to access the template and render it.
+//<%- include('partials/_header') %> to include partial views in your templates
 
 // Route - homepage
 app.get("/", (req, res) => {
