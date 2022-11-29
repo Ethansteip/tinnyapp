@@ -39,7 +39,11 @@ const urlDatabase = {
 // Will return the from submission buffer as a human readable string.
 app.use(express.urlencoded({ extended: true }));
 
-// Create new URL - POST
+/**
+ * Routes
+*/
+
+// Create URL - POST
 app.post("/urls", (req, res) => {
   const shortUrl = generateRandomString();
   const longUrl = req.body.longURL;
@@ -51,11 +55,21 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${shortUrl}`);
 });
 
-// Delete url - POST
+// Delete URL - POST
 app.post('/urls/:id/delete', (req, res)=> {
   const { id } = req.params;
   console.log(`url with an id of ${id} : ${urlDatabase[id]} has been deleted from the database`);
   delete urlDatabase[id];
+  res.redirect('/urls');
+});
+
+// Edit URL - POST
+app.post('/urls/:id', (req, res) => {
+  const { id } = req.params;
+  const { urlEdit } = req.body;
+  console.log(`changing ${id} : ${urlDatabase[id]} to ${urlEdit}`);
+  urlDatabase[id] = urlEdit;
+  console.log(urlDatabase);
   res.redirect('/urls');
 });
 
