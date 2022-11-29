@@ -51,6 +51,14 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${shortUrl}`);
 });
 
+// Delete url - POST
+app.post('/urls/:id/delete', (req, res)=> {
+  const { id } = req.params;
+  console.log(`url with an id of ${id} : ${urlDatabase[id]} has been deleted from the database`);
+  delete urlDatabase[id];
+  res.redirect('/urls');
+});
+
 // Route - redirect from short url to long url.
 app.get("/u/:id", (req, res) => {
   const urls = { id: req.params.id, longURL: urlDatabase[req.params.id] };
@@ -94,5 +102,5 @@ app.get("/hello", (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
+  console.log(`Example app listening on port https://localhost:${PORT}/`);
 });
