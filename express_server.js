@@ -39,12 +39,27 @@ const urlDatabase = {
 // Will return the from submission buffer as a human readable string.
 app.use(express.urlencoded({ extended: true }));
 
-// New URL - POST
+// Create new URL - POST
 app.post("/urls", (req, res) => {
-  console.log(req.body);
-  res.send("ok");
+  const shortUrl = generateRandomString();
+  const longUrl = req.body.longURL;
+
+  urlDatabase[shortUrl] = longUrl;
+  console.log(urlDatabase);
+
+  const templateVars = { id: shortUrl, longURL: longUrl };
+  res.redirect(`/urls/${shortUrl}`);
 });
 
+// Route - redirect from short url to long url.
+app.get("/u/:id", (req, res) => {
+  const urls = { id: req.params.id, longURL: urlDatabase[req.params.id] };
+
+  if (urls.longURL.includes('http://') || urls.longURL.includes('https://')) {
+    res.redirect(urls.longURL);
+  }
+  res.redirect(`https://${urls.longURL}`);
+});
 
 // Route - homepage
 app.get("/", (req, res) => {
