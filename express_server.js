@@ -5,6 +5,8 @@
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
+// require cookie-parser
+const cookieParser = require('cookie-parser');
 
 // Set the default view engine to ejs
 app.set('view engiine', 'ejs');
@@ -27,6 +29,7 @@ const generateRandomString = () => {
   return shortUrl;
 };
 
+// URL Databse
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
@@ -38,6 +41,7 @@ const urlDatabase = {
 
 // Will return the from submission buffer as a human readable string.
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 /**
  * Routes
@@ -51,7 +55,11 @@ app.post("/urls", (req, res) => {
   urlDatabase[shortUrl] = longUrl;
   console.log(urlDatabase);
 
-  const templateVars = { id: shortUrl, longURL: longUrl };
+  const templateVars = { id: shortUrl,
+    longURL: longUrl,
+    username: req.cookies["username"]
+  };
+
   res.redirect(`/urls/${shortUrl}`);
 });
 
@@ -73,7 +81,7 @@ app.post('/urls/:id', (req, res) => {
   res.redirect('/urls');
 });
 
-// Route - redirect from short url to long url.
+// Redirect from Tiny URL to actual URL
 app.get("/u/:id", (req, res) => {
   const urls = { id: req.params.id, longURL: urlDatabase[req.params.id] };
 
@@ -83,36 +91,57 @@ app.get("/u/:id", (req, res) => {
   res.redirect(`https://${urls.longURL}`);
 });
 
-// Route - homepage
+// Homepage
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
 
-// Route - Urls.json
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
-
-// Route - URLs index
+// URLs index
 app.get("/urls" ,(req, res) => {
-  const templateVars = { urls: urlDatabase };
+  const templateVars = {
+    urls: urlDatabase,
+    username: req.cookies["username"]
+  };
   res.render("urls_index.ejs", templateVars);
 });
 
 // Route - URL new - renders the page to submit a new URL.
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new.ejs");
+
+  const { username } = req.cookies;
+  const templateVars = {
+    username: req.cookies["username"],
+  };
+  console.log(templateVars.username);
+
+  res.render("urls_new.ejs", templateVars);
 });
 
 // Route - URL show - passes the url key => value to the template using req.params
 app.get("/urls/:id" ,(req, res) => {
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
+
+  const templateVars = { id: req.params.id,
+    longURL: urlDatabase[req.params.id],
+    username: req.cookies["username"]
+  };
+  console.log(req.cookies);
   res.render("urls_show.ejs", templateVars);
 });
 
-// Route - html example
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
+// Login
+app.post('/login', (req, res) => {
+  const { username } = req.body;
+  console.log(`Logged in: ${username}`);
+  res.cookie("username", username);
+  res.redirect('/urls');
+});
+
+// Logout
+app.post('/logout', (req, res) => {
+  const { username } = req.body;
+  console.log(`logged out: ${username}`);
+  res.clearCookie("username", username);
+  res.redirect('/urls');
 });
 
 app.listen(PORT, () => {
