@@ -1,12 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, shrink-to-fit=no"
-    />
-
     <!-- Bootstrap CSS -->
     <link
       rel="stylesheet"
@@ -14,29 +8,29 @@
       integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS"
       crossorigin="anonymous"
     />
-
-    <title>New URL - TinyApp Example</title>
+    <title>URL - TinyApp Example</title>
   </head>
 
-  <body>
+  <body class="w-100 d-flex-col justify-content-center">
     <%- include('partials/headerv2') %>
 
-    <main style="margin: 1em;">
-      <h3>Create TinyURL</h3>
-      <form class="form-inline" action="/urls" method="POST">
-        <div class="form-group mb-2">
-          <label for="longURL">Enter a URL:</label>
-          <input
-            class="form-control"
-            type="text"
-            name="longURL"
-            placeholder="http://"
-            style="width: 300px; margin: 1em"
-          />
-          <button type="submit" class="btn btn-primary">Submit</button>
+    <form action="/login" method="POST" class="w-50 d-flex-col justify-content-center p-5">
+      <h3 class="text-primary">Login</h3>
+      <div class="row mb-3">
+        <label for="inputEmail3" class="col-sm-2 col-form-label">Email</label>
+        <div class="col-sm-10">
+          <input type="email" name="loginEmail" class="form-control" id="inputEmail3">
         </div>
-      </form>
-    </main>
+      </div>
+      <div class="row mb-3">
+        <label for="inputPassword3" class="col-sm-2 col-form-label">Password</label>
+        <div class="col-sm-10">
+          <input type="password" name="loginPassword" class="form-control" id="inputPassword3">
+        </div>
+      </div>
+      
+      <button type="submit" class="btn btn-primary">Sign in</button>
+    </form>
     <!-- Bootstrap JS -->
     <script
       src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
