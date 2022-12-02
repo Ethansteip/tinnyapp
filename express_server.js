@@ -8,6 +8,7 @@ const express = require("express");
 const app = express();
 const PORT = 8080;
 const cookieParser = require('cookie-parser');
+const bcrypt = require("bcryptjs");
 const { application } = require("express");
 app.set('view engiine', 'ejs');
 
@@ -125,13 +126,13 @@ const users = {
   '54321': {
     id: "54321",
     email: "maggie.smith@hotmail.com",
-    password: "password",
+    password: "$2a$10$3GVbAzBiwABZ5CcMs7rsXePtI8wwJLKZL9mVMpL7drv9josqu.MdK",
 
   },
   '12345': {
     id: "12345",
     email: "ethan.steip@gmail.com",
-    password: "password",
+    password: "$2a$10$IpfSpG9HMIxAaoiW0W/BduItqapZkUzLwzWSzZ9g1QNg0GFhSzECG",
   },
 };
 
@@ -361,21 +362,23 @@ app.get('/login', (req, res) => {
 
 app.post('/login', (req, res) => {
   const { loginEmail, loginPassword } = req.body;
-  // check that email and password match
   const user = userLookup(loginEmail);
-
+  const passwordCheck = bcrypt.compareSync(loginPassword, user.password);
+  // Chech that the user submitted both their email and password, that the email/user exists in our db
+  // and that they are using the correct password.
   if (!loginEmail || !loginPassword) {
     res.status(400).send('Invalid credentials, please try again.');
     //const usersPassword = user.password;
   } else if (user === null) {
     res.status(403).send(`user ${loginEmail} could not be found in the database`);
     console.log(`user ${loginEmail} could not be found in the database`);
-  } else if (loginPassword !== user.password) {
+  } else if (!passwordCheck) {
     res.status(403).send('Invalid credentials, please try again.');
-    console.log(`User's submitted password ${loginPassword} does not match ${user.password}`);
+    console.log(`User submiited the incorrect password`);
   } else {
     res.cookie("user_id", String(user.id));
     res.redirect('/urls');
+    console.log("Credentials are a match. Logging the user in.");
   }
 });
 
@@ -420,6 +423,7 @@ app.get("/register", (req, res) => {
 
 app.post('/register', (req, res) => {
   const { email, password } = req.body;
+  const hashedPassword = bcrypt.hashSync(password, 10);
   const userID = generateRandomString();
 
   // handle empty email or password inputs
@@ -430,7 +434,7 @@ app.post('/register', (req, res) => {
     res.status(400).send(`Sorry, ${email} has already been registered.`);
     console.log(`Unable to register user: ${email} has already been registered.`);
   } else {
-    users[userID] = { id: userID, email: email, password: password };
+    users[userID] = { id: userID, email: email, password: hashedPassword };
     res.cookie("user_id", userID);
 
     console.log(`Adding user: ${email} and setting user_id cookie.`);
