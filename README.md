@@ -82,19 +82,19 @@ Getting started with TinyApp is as easy as cloning our Github repo. to your own 
 1. Clone the repo.
 <br>
 <br>
-```sh
+```
 git clone git@github.com:Ethansteip/tinnyapp.git TinyApp
 ```
 3. Install all dependencies.
 <br>
 <br>
-```sh
+```
 npm install
 ```
 3. Run the development web server using the `node express_server.js` command.
 <br>
 <br>
-```sh
+```
 node express_server.js
 ```
    
