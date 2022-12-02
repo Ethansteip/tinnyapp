@@ -53,14 +53,11 @@ const userLookup = (email) => {
 const urlsForUser = (userId) => {
 
   let urlObj = {};
-
   for (const x in urlDatabase) {
     if (urlDatabase[x].userID === userId) {
       urlObj[x] = urlDatabase[x].longURL;
     }
   }
-
-  //console.log(urlObj);
   return urlObj;
 };
 
@@ -194,9 +191,23 @@ app.post("/urls", (req, res) => {
 
 app.post('/urls/:id/delete', (req, res)=> {
   const { id } = req.params;
-  console.log(`url with an id of ${id} : ${urlDatabase[id].longURL} has been deleted from the database`);
-  delete urlDatabase[id];
-  res.redirect('/urls');
+
+  // check to see if url id exists, if user is logged in and if the url belongs to the user before deleting.
+  if (!users[req.cookies["user_id"]]) {
+    res.send("Sorry, you need to be logged in to perform that action");
+    console.log("Delete: canno't perform action as user is not logged in or registered.");
+  } else if (!urlIdLookup(id)) {
+    res.send("Sorry, we canno't find a url with that id");
+    console.log("Delete: canno't find url with that id");
+  } else if (users[req.cookies["user_id"]].id !== urlDatabase[id].userID) {
+    res.send("Sorry, you don't have access to delete that url.");
+    console.log("Delete: canno't perform action as that is not the user's url.");
+  } else {
+    console.log(`URL with an id of ${id} : ${urlDatabase[id].longURL} has been deleted from the database \n updated url database:`);
+    delete urlDatabase[id];
+    res.redirect('/urls');
+    console.log(urlDatabase);
+  }
 });
 
 /**
@@ -206,23 +217,24 @@ app.post('/urls/:id/delete', (req, res)=> {
  */
 
 app.post('/urls/:id', (req, res) => {
+
   const { id } = req.params;
   const { urlEdit } = req.body;
-  //console.log(`changing ${id} : ${urlDatabase[id].longURL} to ${urlEdit}`);
 
-  // check to see if url id exists, if user is logged in and if the url belongs to the user.
+
+  // check to see if url id exists, if user is logged in and if the url belongs to the user before editing.
   if (!urlIdLookup(id)) {
     res.send("Sorry, we canno't find a url with that id");
     console.log("Edit: canno't find url with that id");
   } else if (!users[req.cookies["user_id"]]) {
-    res.send("Soory, you need to be logged in to perofrm this action");
+    res.send("Sorry, you need to be logged in to perform that action");
     console.log("Edit: canno't perform action as user is not logged in or registered.");
-  } else if (users[req.cookies["user_id"]] !== urlDatabase[id].userID) {
-    console.log("Edit: canno't perform action as that is not the users url.");
+  } else if (users[req.cookies["user_id"]].id !== urlDatabase[id].userID) {
+    res.send("Sorry, you don't have access to edit that url.");
+    console.log("Edit: canno't perform action as that is not the user's url.");
   } else {
     urlDatabase[id].longURL = urlEdit;
     res.redirect('/urls');
-    console.log(urlDatabase);
   }
 });
 
@@ -310,7 +322,7 @@ app.get("/urls/:id" ,(req, res) => {
     console.log("User canno't view page because they aren't logged in or registered.");
   } else if (!urlIdLookup(req.params.id)) {
     res.send("Sorry, the page you are looking for canno't be found. Please try again.");
-    console.log("User canno't view page because the url id doesn't exist."); 
+    console.log("User canno't view page because the url id doesn't exist.");
   } else if (templateVars.user.id !== urlDatabase[req.params.id].userID) {
     res.send("Sorry, you dont own that url.");
     console.log("User canno't view page because they don't own the url");
