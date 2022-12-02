@@ -4,14 +4,12 @@
  *
 */
 
+// Import required libraries and functions
 const express = require("express");
 const app = express();
 const PORT = 8080;
 const cookieSession = require('cookie-session');
 const bcrypt = require("bcryptjs");
-app.set('view engiine', 'ejs');
-
-// import helper functions
 const { generateRandomString, getUserByEmail, urlsForUser, urlIdLookup } = require("./helper.js");
 
 /**
@@ -78,6 +76,7 @@ const users = {
 */
 
 app.use(express.urlencoded({ extended: true }));
+app.set('view engiine', 'ejs');
 app.use(cookieSession({
   name: 'session',
   keys: ['yuiebfwqeidnifbtebuilbcrebfj'],
@@ -86,11 +85,11 @@ app.use(cookieSession({
   maxAge: 24 * 60 * 60 * 1000 // 24 hours
 }));
 
-/**
- *
- * Routes
- *
-*/
+/**                                                                    /**
+ *                                                                      *
+ * ----------------------------- Routes ------------------------------- *
+ *                                                                      *
+*/                                                                      /*
 
 /**
  *
