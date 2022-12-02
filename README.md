@@ -46,10 +46,9 @@
 ## About TinyApp
 
 !["Screenshot of URLS page"](https://github.com/Ethansteip/tinnyapp/blob/main/docs/urls_index.png?raw=true)
+<br>
+<br>
 !["Screenshot of urls/show page"](https://github.com/Ethansteip/tinnyapp/blob/main/docs/urls_show.png?raw=true)
-<br>
-<br>
-<img src="/Users/ethansmac/lighthouse/tinyapp/docs/urls_show.png">
 <br>
 <br>
 
