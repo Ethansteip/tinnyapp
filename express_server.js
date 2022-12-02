@@ -11,72 +11,8 @@ const cookieSession = require('cookie-session');
 const bcrypt = require("bcryptjs");
 app.set('view engiine', 'ejs');
 
-/**
- *
- * generateRandomString - will generate a 6 digit, alphanumeric id that we'll use as our short url.
- *
- */
-
-const generateRandomString = () => {
-  const characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789';
-
-  let randomCharacters = [];
-  for (let i = 0; i < 6; i++) {
-    randomCharacters.push(characters[Math.floor(Math.random() * characters.length)]);
-  }
-  const shortUrl = randomCharacters.join("");
-  return shortUrl;
-};
-
-/**
- *
- * userLookup - returns either true or false if a the supplied email is already found in our users database.
- *
- */
-
-const userLookup = (email) => {
-
-  for (const x in users) {
-    if (users[x].email === email) {
-      return users[x];
-    }
-  }
-  return null;
-};
-
-/**
- *
- * urlsForUser - returns a list of all URLs associated with a user.
- *
- */
-
-const urlsForUser = (userId) => {
-
-  let urlObj = {};
-  for (const x in urlDatabase) {
-    if (urlDatabase[x].userID === userId) {
-      urlObj[x] = urlDatabase[x].longURL;
-    }
-  }
-  return urlObj;
-};
-
-
-/**
- *
- * short url id lookup
- *
- */
-
-const urlIdLookup = (id) => {
-
-  for (const x in urlDatabase) {
-    if (urlDatabase[id]) {
-      return true;
-    }
-  }
-  return false;
-};
+// import helper functions
+const { generateRandomString, getUserByEmail, urlsForUser, urlIdLookup } = require("./helper.js");
 
 /**
  *
@@ -169,24 +105,17 @@ app.post("/urls", (req, res) => {
   const templateVars = {
     id: shortUrl,
     longURL: longUrl,
-    user: req.session.user_id,
+    user: req.session.userId,
   };
 
-  // Don't let non-logged in members submit post requests to /urls.
+  // Don't let non-logged in users submit post requests to /urls.
   if (!templateVars.user) {
     res.send("Sorry, but you will need to be logged in to access this page!");
     console.log(`User is not authorized to access the create url page.`);
   } else {
-
     urlDatabase[shortUrl] = {longURL: longUrl, userID: templateVars.user};
-
-    console.log(urlDatabase);
-
     res.redirect(`/urls/${shortUrl}`);
   }
-  // Check if unauthorized users can still post to database.
-  // console.log(urlDatabase);
-
 });
 
 /**
@@ -199,13 +128,13 @@ app.post('/urls/:id/delete', (req, res)=> {
   const { id } = req.params;
 
   // check to see if url id exists, if user is logged in and if the url belongs to the user before deleting.
-  if (!req.session.user_id) {
+  if (!req.session.userId) {
     res.send("Sorry, you need to be logged in to perform that action");
     console.log("Delete: canno't perform action as user is not logged in or registered.");
-  } else if (!urlIdLookup(id)) {
+  } else if (!urlIdLookup(id, urlDatabase)) {
     res.send("Sorry, we canno't find a url with that id");
     console.log("Delete: canno't find url with that id");
-  } else if (req.session.user_id !== urlDatabase[id].userID) {
+  } else if (req.session.userId !== urlDatabase[id].userID) {
     res.send("Sorry, you don't have access to delete that url.");
     console.log("Delete: canno't perform action as that is not the user's url.");
   } else {
@@ -229,13 +158,13 @@ app.post('/urls/:id', (req, res) => {
 
 
   // check to see if url id exists, if user is logged in and if the url belongs to the user before editing.
-  if (!urlIdLookup(id)) {
+  if (!urlIdLookup(id, urlDatabase)) {
     res.send("Sorry, we canno't find a url with that id");
     console.log("Edit: canno't find url with that id");
-  } else if (!req.session.user_id) {
+  } else if (!req.session.userId) {
     res.send("Sorry, you need to be logged in to perform that action");
     console.log("Edit: canno't perform action as user is not logged in or registered.");
-  } else if (req.session.user_id !== urlDatabase[id].userID) {
+  } else if (req.session.userId !== urlDatabase[id].userID) {
     res.send("Sorry, you don't have access to edit that url.");
     console.log("Edit: canno't perform action as that is not the user's url.");
   } else {
@@ -253,7 +182,7 @@ app.post('/urls/:id', (req, res) => {
 app.get("/u/:id", (req, res) => {
   const urls = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL };
 
-  if (!urlIdLookup(urls.id)) {
+  if (!urlIdLookup(urls.id, urlDatabase)) {
     res.send("Sorry, the url with that id could not be located. Please try again");
     console.log(`Url with ID: ${urls.id} could not be found`);
   } else if (urls.longURL.includes('http://') || urls.longURL.includes('https://')) {
@@ -265,12 +194,17 @@ app.get("/u/:id", (req, res) => {
 
 /**
  *
- * / - GET - sends user to the homepage.
+ * / - GET - sends user to the either urls or login template based on whether they are logged in or not.
  *
  */
 
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  const userId = req.session.userId;
+  if (!userId) {
+    res.redirect('/login');
+  } else {
+    res.redirect('/urls');
+  }
 });
 
 /**
@@ -280,16 +214,12 @@ app.get("/", (req, res) => {
  */
 
 app.get("/urls" ,(req, res) => {
-  const userId = req.session.user_id;
-
-  console.log(userId);
+  const userId = req.session.userId;
 
   const templateVars = {
-    urls: urlsForUser(userId), // user.id
-    user: users[req.session.user_id], // usr[12345]
+    urls: urlsForUser(userId, urlDatabase), // user.id
+    user: users[req.session.userId], // usr[12345]
   };
-
-  //console.log(req.session.user_id);
 
   res.render("urls_index.ejs", templateVars);
 });
@@ -302,7 +232,7 @@ app.get("/urls" ,(req, res) => {
 
 app.get("/urls/new", (req, res) => {
   const templateVars = {
-    user: users[req.session.user_id],
+    user: users[req.session.userId],
   };
 
   console.log("User ID: ", templateVars.user);
@@ -323,18 +253,18 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/urls/:id" ,(req, res) => {
 
-  console.log(urlIdLookup(req.params.id));
+  console.log(urlIdLookup(req.params.id, urlDatabase));
   const templateVars = {
     id: req.params.id,
-    user: users[req.session.user_id],
-    userId: req.session.user_id
+    user: users[req.session.userId],
+    userId: req.session.userId
   };
 
   // Check if user is logged in and if the short url exists before rendering the show template.
-  if (!req.session.user_id) {
+  if (!req.session.userId) {
     res.redirect('/unauthorized');
     console.log("User canno't view page because they aren't logged in or registered.");
-  } else if (!urlIdLookup(req.params.id)) {
+  } else if (!urlIdLookup(req.params.id, urlDatabase)) {
     res.send("Sorry, the page you are looking for canno't be found. Please try again.");
     console.log("User canno't view page because the url id doesn't exist.");
   } else if (templateVars.userId !== urlDatabase[req.params.id].userID) {
@@ -356,14 +286,14 @@ app.get("/urls/:id" ,(req, res) => {
 
 app.get('/login', (req, res) => {
   const templateVars = {
-    user: req.session.user_id,
+    user: req.session.userId,
   };
-  console.log("User: ", templateVars.user);
+
   if (templateVars.user) {
     console.log("user is logged in, redirecting to urls");
     res.redirect('/urls');
   } else {
-    console.log("user is logged out, sending to login page");
+    console.log("user is logged out, sending to /login page");
     res.render("login.ejs", templateVars);
   }
 });
@@ -377,27 +307,30 @@ app.get('/login', (req, res) => {
 app.post('/login', (req, res) => {
   console.log(req.body);
   const { loginEmail, loginPassword } = req.body;
-  const user = userLookup(loginEmail);
+  const user = getUserByEmail(loginEmail, users);
+  console.log("User: ", user);
 
   // if user does not submit email or password
   if (!loginEmail || !loginPassword) {
     res.status(400).send('Invalid credentials, please try again.');
   }
+  // Check that the email/user exists in our db
+  if (user === null) {
+    res.status(403).send(`User ${loginEmail} could not be found in the database`);
+    console.log(`user ${loginEmail} could not be found in the database`);
+  }
 
   // compare submitted password against hash.
   const passwordCheck = bcrypt.compareSync(loginPassword, user.password);
 
-  // Check that the email/user exists in our db
-  // and that they are using the correct password.
-  if (user === null) {
-    res.status(403).send(`user ${loginEmail} could not be found in the database`);
-    console.log(`user ${loginEmail} could not be found in the database`);
-  } else if (!passwordCheck) {
+
+  // Check that passwords match.
+  if (!passwordCheck) {
     res.status(403).send('Invalid credentials, please try again.');
     console.log(`User submiited the incorrect password`);
   } else {
     //write a cookie
-    req.session.user_id = user.id;
+    req.session.userId = user.id;
 
     //res.cookie("user_id", String(user.id));
     res.redirect('/urls');
@@ -426,7 +359,7 @@ app.post('/logout', (req, res) => {
 app.get("/register", (req, res) => {
   const templateVars = {
     id: req.params.id,
-    user: req.session.user_id,
+    user: req.session.userId,
   };
 
   if (templateVars.user) {
@@ -453,14 +386,13 @@ app.post('/register', (req, res) => {
   if (!email || !password) {
     res.status(400).send('Invalid credentials, please try again.');
   // handle duplicate email address
-  } else if (userLookup(email) !== null) {
+  } else if (getUserByEmail(email, users) !== null) {
     res.status(400).send(`Sorry, ${email} has already been registered.`);
     console.log(`Unable to register user: ${email} has already been registered.`);
   } else {
     users[userID] = { id: userID, email: email, password: hashedPassword };
     //write cookie here
-    req.session.user_id = userID;
-    //res.cookie("user_id", userID);
+    req.session.userId = userID;
 
     console.log(`Adding user: ${email} and setting user_id cookie.`);
     console.log(users);
@@ -478,7 +410,7 @@ app.post('/register', (req, res) => {
 app.get('/unauthorized', (req, res) => {
 
   const templateVars = {
-    user: req.session.user_id,
+    user: req.session.userId,
   };
   res.render("unauthorizedUser.ejs", templateVars);
 });
