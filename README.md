@@ -45,7 +45,8 @@
 <!-- ABOUT THE PROJECT -->
 ## About TinyApp
 
-<img src="/Users/ethansmac/lighthouse/tinyapp/docs/urls_index.png">
+!["Screenshot of URLS page"](https://github.com/Ethansteip/tinnyapp/blob/main/docs/urls_index.png?raw=true)
+!["Screenshot of urls/show page"](https://github.com/Ethansteip/tinnyapp/blob/main/docs/urls_show.png?raw=true)
 <br>
 <br>
 <img src="/Users/ethansmac/lighthouse/tinyapp/docs/urls_show.png">
@@ -82,21 +83,21 @@ Getting started with TinyApp is as easy as cloning our Github repo. to your own 
 1. Clone the repo.
 <br>
 <br>
-   ```sh
-   git clone git@github.com:Ethansteip/tinnyapp.git TinyApp
-   ```
+```sh
+git clone git@github.com:Ethansteip/tinnyapp.git TinyApp
+```
 3. Install all dependencies.
 <br>
 <br>
-   ```sh
-   npm install
-   ```
+```sh
+npm install
+```
 3. Run the development web server using the `node express_server.js` command.
 <br>
 <br>
-   ```sh
-   node express_server.js
-   ```
+```sh
+node express_server.js
+```
    
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -109,8 +110,8 @@ Getting started with TinyApp is as easy as cloning our Github repo. to your own 
 Ethan Steip
 <br>
 ```sh
-   ethan.steip@gmail.com
-   ```
+ethan.steip@gmail.com
+```
 
 Project Link: [TinyApp - url minimizer](https://github.com/Ethansteip/tinnyapp)
 
