@@ -1,18 +1,20 @@
 /**
-* Express_server - sets up the web server and routing for TinyApp using Express.
+ *
+ * Express_server.js - initializes the webserver and handles all of TinyApp's routing.
+ *
 */
 
 const express = require("express");
 const app = express();
-const PORT = 8080; // default port 8080
-// require cookie-parser
+const PORT = 8080;
 const cookieParser = require('cookie-parser');
-
-// Set the default view engine to ejs
+const { application } = require("express");
 app.set('view engiine', 'ejs');
 
 /**
- * generateRandomString - will generate a string that we'll use as the 'minified' url.
+ *
+ * generateRandomString - will generate a 6 digit, alphanumeric id that we'll use as our short url.
+ *
  */
 
 const generateRandomString = () => {
@@ -23,12 +25,13 @@ const generateRandomString = () => {
     randomCharacters.push(characters[Math.floor(Math.random() * characters.length)]);
   }
   const shortUrl = randomCharacters.join("");
-  //console.log(shortUrl);
   return shortUrl;
 };
 
 /**
+ *
  * userLookup - returns either true or false if a the supplied email is already found in our users database.
+ *
  */
 
 const userLookup = (email) => {
@@ -41,17 +44,92 @@ const userLookup = (email) => {
   return null;
 };
 
-// URL Databse
-const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+/**
+ *
+ * urlsForUser - returns a list of all URLs associated with a user.
+ *
+ */
+
+const urlsForUser = (userId) => {
+
+  let urlObj = {};
+
+  for (const x in urlDatabase) {
+    if (urlDatabase[x].userID === userId) {
+      urlObj[x] = urlDatabase[x].longURL;
+    }
+  }
+
+  //console.log(urlObj);
+  return urlObj;
 };
+
+
+/**
+ *
+ * short url id lookup
+ *
+ */
+
+const urlIdLookup = (id) => {
+
+  for (const x in urlDatabase) {
+    if (urlDatabase[id]) {
+      return true;
+    }
+  }
+  return false;
+};
+
+/**
+ *
+ * URL Database
+ *
+ */
+
+const urlDatabase = {
+  "b2xVn2": {
+    longURL: "http://www.lighthouselabs.ca",
+    userID: "54321"
+  },
+  "9sm5xK": {
+    longURL: "http://www.google.com",
+    userID: "12345",
+  },
+  "Fahi3t": {
+    longURL: "www.twitter.com",
+    userID: "12345"
+  },
+  "l2Hjj0": {
+    longURL: "www.facebook.com",
+    userID: "12345"
+  },
+  "L0L1Sdg": {
+    longURL: "www.dribbble.com",
+    userID: "54321",
+  },
+  "H7VVd1": {
+    longURL: "www.dailynews.com",
+    userID: "54321"
+  },
+  "jas0HJ": {
+    longURL: "www.torontopost.com",
+    userID: "54321"
+  },
+};
+
+/**
+ *
+ * User Database
+ *
+ */
 
 const users = {
   '54321': {
     id: "54321",
     email: "maggie.smith@hotmail.com",
     password: "password",
+
   },
   '12345': {
     id: "12345",
@@ -61,103 +139,192 @@ const users = {
 };
 
 /**
+ *
  * MiddleWare
+ *
 */
 
-// Will return the from submission buffer as a human readable string.
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 /**
+ *
  * Routes
+ *
 */
 
-// Create URL - POST
+/**
+ *
+ * Create URL - POST - allows the user to create a URL.
+ *
+ */
+
 app.post("/urls", (req, res) => {
   const shortUrl = generateRandomString();
   const longUrl = req.body.longURL;
 
-  urlDatabase[shortUrl] = longUrl;
-  console.log(urlDatabase);
-
-  const templateVars = { id: shortUrl,
+  const templateVars = {
+    id: shortUrl,
     longURL: longUrl,
     user: users[req.cookies["user_id"]],
   };
 
-  res.redirect(`/urls/${shortUrl}`);
-});
+  // Don't let non-logged in members submit post requests to /urls.
+  if (!templateVars.user) {
+    res.send("Sorry, but you will need to be logged in to access this page!");
+    console.log(`User is not authorized to access the create url page.`);
+  } else {
 
-// Delete URL - POST
-app.post('/urls/:id/delete', (req, res)=> {
-  const { id } = req.params;
-  console.log(`url with an id of ${id} : ${urlDatabase[id]} has been deleted from the database`);
-  delete urlDatabase[id];
-  res.redirect('/urls');
-});
+    urlDatabase[shortUrl] = {longURL: longUrl, userID: templateVars.user.id};
 
-// Edit URL - POST
-app.post('/urls/:id', (req, res) => {
-  const { id } = req.params;
-  const { urlEdit } = req.body;
-  console.log(`changing ${id} : ${urlDatabase[id]} to ${urlEdit}`);
-  urlDatabase[id] = urlEdit;
-  console.log(urlDatabase);
-  res.redirect('/urls');
-});
+    console.log(urlDatabase);
 
-// Redirect from Tiny URL to actual URL
-app.get("/u/:id", (req, res) => {
-  const urls = { id: req.params.id, longURL: urlDatabase[req.params.id] };
-
-  if (urls.longURL.includes('http://') || urls.longURL.includes('https://')) {
-    res.redirect(urls.longURL);
+    res.redirect(`/urls/${shortUrl}`);
   }
-  res.redirect(`https://${urls.longURL}`);
-});
+  // Check if unauthorized users can still post to database.
+  // console.log(urlDatabase);
 
-// Homepage
-app.get("/", (req, res) => {
-  res.send("Hello!");
-});
-
-// URLs index
-app.get("/urls" ,(req, res) => {
-  const templateVars = {
-    urls: urlDatabase,
-    user: users[req.cookies["user_id"]], // usr[12345]
-  };
-  console.log(templateVars);
-  res.render("urls_index.ejs", templateVars);
-});
-
-// Route - URL new - renders the page to submit a new URL.
-app.get("/urls/new", (req, res) => {
-  const templateVars = {
-    user: users[req.cookies["user_id"]],
-  };
-  //console.log(templateVars.user.id);
-
-  res.render("urls_new.ejs", templateVars);
-});
-
-/**
- * /urls/:id - GET - (show) passes the url key => value to the template using req.params
- */
-app.get("/urls/:id" ,(req, res) => {
-
-  const templateVars = {
-    id: req.params.id,
-    longURL: urlDatabase[req.params.id],
-    user: users[req.cookies["user_id"]],
-  };
-  console.log(req.cookies);
-  res.render("urls_show.ejs", templateVars);
 });
 
 /**
  *
- * /login - GET - returns the login template.
+ * Delete URL - POST - allows the user to delete their URLs
+ *
+ */
+
+app.post('/urls/:id/delete', (req, res)=> {
+  const { id } = req.params;
+  console.log(`url with an id of ${id} : ${urlDatabase[id].longURL} has been deleted from the database`);
+  delete urlDatabase[id];
+  res.redirect('/urls');
+});
+
+/**
+ *
+ * Edit URL - POST - allows the user to edit their longURLs.
+ *
+ */
+
+app.post('/urls/:id', (req, res) => {
+  const { id } = req.params;
+  const { urlEdit } = req.body;
+  //console.log(`changing ${id} : ${urlDatabase[id].longURL} to ${urlEdit}`);
+
+  // check to see if url id exists, if user is logged in and if the url belongs to the user.
+  if (!urlIdLookup(id)) {
+    res.send("Sorry, we canno't find a url with that id");
+    console.log("Edit: canno't find url with that id");
+  } else if (!users[req.cookies["user_id"]]) {
+    res.send("Soory, you need to be logged in to perofrm this action");
+    console.log("Edit: canno't perform action as user is not logged in or registered.");
+  } else if (users[req.cookies["user_id"]] !== urlDatabase[id].userID) {
+    console.log("Edit: canno't perform action as that is not the users url.");
+  } else {
+    urlDatabase[id].longURL = urlEdit;
+    res.redirect('/urls');
+    console.log(urlDatabase);
+  }
+});
+
+/**
+ *
+ * /u/:id - GET - send user to the longURL.
+ *
+ */
+
+app.get("/u/:id", (req, res) => {
+  const urls = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL };
+
+  if (!urlIdLookup(urls.id)) {
+    res.send("Sorry, the url with that id could not be located. Please try again");
+    console.log(`Url with ID: ${urls.id} could not be found`);
+  } else if (urls.longURL.includes('http://') || urls.longURL.includes('https://')) {
+    res.redirect(urls.longURL);
+  } else {
+    res.redirect(`https://${urls.longURL}`);
+  }
+});
+
+/**
+ *
+ * / - GET - sends user to the homepage.
+ *
+ */
+
+app.get("/", (req, res) => {
+  res.send("Hello!");
+});
+
+/**
+ *
+ * /urls - GET - sends user to page with all of their urls.
+ *
+ */
+
+app.get("/urls" ,(req, res) => {
+  const templateVars = {
+    urls: urlsForUser(req.cookies["user_id"]),
+    user: users[req.cookies["user_id"]], // usr[12345]
+  };
+
+  //res.send(templateVars.urls);
+  res.render("urls_index.ejs", templateVars);
+});
+
+/**
+ *
+ * /urls/new - GET - sends user to the "create new" url template.
+ *
+ */
+
+app.get("/urls/new", (req, res) => {
+  const templateVars = {
+    user: users[req.cookies["user_id"]],
+  };
+
+  if (!templateVars.user) {
+    console.log("user is not logged in, sending to login page");
+    res.redirect('/login');
+  } else {
+    res.render("urls_new.ejs", templateVars);
+  }
+});
+
+/**
+ *
+ * /urls/:id - GET - sends to the user to the individual short url template.
+ *
+ */
+
+app.get("/urls/:id" ,(req, res) => {
+
+  console.log(urlIdLookup(req.params.id));
+  const templateVars = {
+    id: req.params.id,
+    user: users[req.cookies["user_id"]],
+  };
+
+  // Check if user is logged in and if the short url exists before rendering the show template.
+  if (!req.cookies["user_id"]) {
+    res.redirect('/unauthorized');
+    console.log("User canno't view page because they aren't logged in or registered.");
+  } else if (!urlIdLookup(req.params.id)) {
+    res.send("Sorry, the page you are looking for canno't be found. Please try again.");
+    console.log("User canno't view page because the url id doesn't exist."); 
+  } else if (templateVars.user.id !== urlDatabase[req.params.id].userID) {
+    res.send("Sorry, you dont own that url.");
+    console.log("User canno't view page because they don't own the url");
+  } else {
+    templateVars["longURL"] = urlDatabase[req.params.id].longURL;
+    res.render("urls_show.ejs", templateVars);
+  }
+
+
+});
+
+/**
+ *
+ * /login - GET - sends user to the login template.
  *
  */
 
@@ -165,7 +332,13 @@ app.get('/login', (req, res) => {
   const templateVars = {
     user: users[req.cookies["user_id"]],
   };
-  res.render("login.ejs", templateVars);
+  if (templateVars.user) {
+    console.log("user is logged in, redirecting to urls");
+    res.redirect('/urls');
+  } else {
+    console.log("user is logged out, sending to login page");
+    res.render("login.ejs", templateVars);
+  }
 });
 
 /**
@@ -194,24 +367,45 @@ app.post('/login', (req, res) => {
   }
 });
 
-// Route - /logout - POST - Logs a user out of the app.
+/**
+ *
+ * /logout - POST - Logs a user out of the app.
+ *
+ */
+
 app.post('/logout', (req, res) => {
   console.log("Logged user out");
   res.clearCookie("user_id");
   res.redirect('/login');
 });
 
-// Route - /register - GET -  returns the registrations template
+/**
+ *
+ * /register - GET - sends the user to the register template.
+ *
+ */
+
 app.get("/register", (req, res) => {
   const templateVars = {
     id: req.params.id,
-    longURL: urlDatabase[req.params.id],
     user: users[req.cookies["user_id"]],
   };
-  res.render("register.ejs", templateVars);
+
+  if (templateVars.user) {
+    console.log("user is logged in, redirecting to urls");
+    res.redirect('/urls');
+  } else {
+    console.log("user is logged out, sending to login page");
+    res.render("register.ejs", templateVars);
+  }
 });
 
-// Route - /register - POST - adds a user to the user database.
+/**
+ *
+ * /register - POST - adds a user to the user database.
+ *
+ */
+
 app.post('/register', (req, res) => {
   const { email, password } = req.body;
   const userID = generateRandomString();
@@ -233,6 +427,26 @@ app.post('/register', (req, res) => {
     res.redirect('/urls');
   }
 });
+
+/**
+ *
+ * /unauthorized - sends a user to an "unauthorized user" template
+ *
+ */
+
+app.get('/unauthorized', (req, res) => {
+
+  const templateVars = {
+    user: users[req.cookies["user_id"]],
+  };
+  res.render("unauthorizedUser.ejs", templateVars);
+});
+
+/**
+ *
+ * Starts the  express webserver.
+ *
+ */
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port https://localhost:${PORT}/`);

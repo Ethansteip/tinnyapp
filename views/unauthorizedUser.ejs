@@ -11,26 +11,14 @@
     <title>URL - TinyApp Example</title>
   </head>
 
-  <body class=" d-flex-col justify-content-center" style="">
+  <body class="w-100 d-flex-col justify-content-center" style="">
     <%- include('partials/headerv2') %>
 
-    <form action="/register" method="POST" class="d-flex-col justify-content-center p-5 w-50">
-      <h3 class="text-primary">Register</h3>
-      <div class="row mb-3">
-        <label for="inputEmail3" class="col-sm-2 col-form-label">Email</label>
-        <div class="col-sm-10">
-          <input type="email" name="email" class="form-control" id="inputEmail3">
-        </div>
+    <div class="card">
+      <div class="card-body">
+        <h5>Sorry, this page is currently unavaiable. Please try <a href="/login">logging in</a> or <a href="/register">registering</a>.</h1>
       </div>
-      <div class="row mb-3">
-        <label for="inputPassword3" class="col-sm-2 col-form-label">Password</label>
-        <div class="col-sm-10">
-          <input type="password" name="password" class="form-control" id="inputPassword3">
-        </div>
-      </div>
-      
-      <button type="submit" class="btn btn-primary">Sign in</button>
-    </form>
+    </div>
     <!-- Bootstrap JS -->
     <script
       src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
