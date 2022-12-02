@@ -80,8 +80,6 @@ app.set('view engiine', 'ejs');
 app.use(cookieSession({
   name: 'session',
   keys: ['yuiebfwqeidnifbtebuilbcrebfj'],
-
-  // Cookie Options
   maxAge: 24 * 60 * 60 * 1000 // 24 hours
 }));
 
@@ -98,6 +96,7 @@ app.use(cookieSession({
  */
 
 app.post("/urls", (req, res) => {
+
   const shortUrl = generateRandomString();
   const longUrl = req.body.longURL;
 
@@ -124,6 +123,7 @@ app.post("/urls", (req, res) => {
  */
 
 app.post('/urls/:id/delete', (req, res)=> {
+
   const { id } = req.params;
 
   // check to see if url id exists, if user is logged in and if the url belongs to the user before deleting.
@@ -140,7 +140,6 @@ app.post('/urls/:id/delete', (req, res)=> {
     console.log(`URL with an id of ${id} : ${urlDatabase[id].longURL} has been deleted from the database \n updated url database:`);
     delete urlDatabase[id];
     res.redirect('/urls');
-    console.log(urlDatabase);
   }
 });
 
@@ -154,7 +153,6 @@ app.post('/urls/:id', (req, res) => {
 
   const { id } = req.params;
   const { urlEdit } = req.body;
-
 
   // check to see if url id exists, if user is logged in and if the url belongs to the user before editing.
   if (!urlIdLookup(id, urlDatabase)) {
@@ -179,6 +177,7 @@ app.post('/urls/:id', (req, res) => {
  */
 
 app.get("/u/:id", (req, res) => {
+
   const urls = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL };
 
   if (!urlIdLookup(urls.id, urlDatabase)) {
@@ -213,8 +212,8 @@ app.get("/", (req, res) => {
  */
 
 app.get("/urls" ,(req, res) => {
-  const userId = req.session.userId;
 
+  const userId = req.session.userId;
   const templateVars = {
     urls: urlsForUser(userId, urlDatabase), // user.id
     user: users[req.session.userId], // usr[12345]
@@ -230,11 +229,10 @@ app.get("/urls" ,(req, res) => {
  */
 
 app.get("/urls/new", (req, res) => {
+
   const templateVars = {
     user: users[req.session.userId],
   };
-
-  console.log("User ID: ", templateVars.user);
 
   if (!templateVars.user) {
     console.log("user is not logged in, sending to login page");
@@ -252,7 +250,6 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/urls/:id" ,(req, res) => {
 
-  console.log(urlIdLookup(req.params.id, urlDatabase));
   const templateVars = {
     id: req.params.id,
     user: users[req.session.userId],
@@ -273,8 +270,6 @@ app.get("/urls/:id" ,(req, res) => {
     templateVars["longURL"] = urlDatabase[req.params.id].longURL;
     res.render("urls_show.ejs", templateVars);
   }
-
-
 });
 
 /**
@@ -284,6 +279,7 @@ app.get("/urls/:id" ,(req, res) => {
  */
 
 app.get('/login', (req, res) => {
+
   const templateVars = {
     user: req.session.userId,
   };
@@ -304,10 +300,9 @@ app.get('/login', (req, res) => {
  */
 
 app.post('/login', (req, res) => {
-  console.log(req.body);
+
   const { loginEmail, loginPassword } = req.body;
   const user = getUserByEmail(loginEmail, users);
-  console.log("User: ", user);
 
   // if user does not submit email or password
   if (!loginEmail || !loginPassword) {
@@ -322,7 +317,6 @@ app.post('/login', (req, res) => {
   // compare submitted password against hash.
   const passwordCheck = bcrypt.compareSync(loginPassword, user.password);
 
-
   // Check that passwords match.
   if (!passwordCheck) {
     res.status(403).send('Invalid credentials, please try again.');
@@ -330,8 +324,6 @@ app.post('/login', (req, res) => {
   } else {
     //write a cookie
     req.session.userId = user.id;
-
-    //res.cookie("user_id", String(user.id));
     res.redirect('/urls');
     console.log("Credentials are a match. Logging the user in.");
   }
@@ -344,6 +336,7 @@ app.post('/login', (req, res) => {
  */
 
 app.post('/logout', (req, res) => {
+
   console.log("Logged user out");
   req.session = null;
   res.redirect('/login');
@@ -356,6 +349,7 @@ app.post('/logout', (req, res) => {
  */
 
 app.get("/register", (req, res) => {
+
   const templateVars = {
     id: req.params.id,
     user: req.session.userId,
@@ -377,6 +371,7 @@ app.get("/register", (req, res) => {
  */
 
 app.post('/register', (req, res) => {
+
   const { email, password } = req.body;
   const hashedPassword = bcrypt.hashSync(password, 10);
   const userID = generateRandomString();
@@ -394,8 +389,6 @@ app.post('/register', (req, res) => {
     req.session.userId = userID;
 
     console.log(`Adding user: ${email} and setting user_id cookie.`);
-    console.log(users);
-
     res.redirect('/urls');
   }
 });

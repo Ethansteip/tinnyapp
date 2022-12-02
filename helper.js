@@ -8,14 +8,14 @@
 /**
  *
  * generateRandomString - will generate a 6 digit, alphanumeric id that we'll use as our short url.
- * @params {} - no parameteres needed.
  *
  */
 
 const generateRandomString = () => {
+  
   const characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789';
-
   let randomCharacters = [];
+
   for (let i = 0; i < 6; i++) {
     randomCharacters.push(characters[Math.floor(Math.random() * characters.length)]);
   }
@@ -25,9 +25,9 @@ const generateRandomString = () => {
 
 /**
  *
- * userLookup - returns either true or false if a the supplied email is already found in our users database.
+ * userLookup - returns either the user object or null if the supplied email is found in our users database.
  * @params {string} - email - the user's email address.
- * @params {object} - users - a collection of all the apps users in the form of an object.
+ * @params {object} - users - a collection of all the users in the form of an object.
  *
  */
 
@@ -44,8 +44,8 @@ const getUserByEmail = (email, users) => {
 /**
  *
  * urlsForUser - returns a list of all URLs associated with a user.
- * @params {string} - the user's id we are to associate with urls.
- * @params {object} - a collection of all urls stored in the database in the form of an object.
+ * @params {string} userId - the user's id we are to associate with urls.
+ * @params {object} urlDatabase - a collection of all urls stored in the database in the form of an object.
  *
  */
 
@@ -65,7 +65,7 @@ const urlsForUser = (userId, urlDatabase) => {
  *
  * urlIdLookup - returns true if the id for a given url is found in the database.
  * @params {string} id - the id of the url we are searching for.
- * @params {object} urlDatabse - a collection of all urls stored in the database in the form of an object.
+ * @params {object} urlDatabase - a collection of all urls stored in the database in the form of an object.
  *
  */
 
