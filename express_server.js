@@ -7,9 +7,8 @@
 const express = require("express");
 const app = express();
 const PORT = 8080;
-const cookieParser = require('cookie-parser');
+const cookieSession = require('cookie-session');
 const bcrypt = require("bcryptjs");
-const { application } = require("express");
 app.set('view engiine', 'ejs');
 
 /**
@@ -143,7 +142,13 @@ const users = {
 */
 
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys: ['yuiebfwqeidnifbtebuilbcrebfj'],
+
+  // Cookie Options
+  maxAge: 24 * 60 * 60 * 1000 // 24 hours
+}));
 
 /**
  *
@@ -164,7 +169,7 @@ app.post("/urls", (req, res) => {
   const templateVars = {
     id: shortUrl,
     longURL: longUrl,
-    user: users[req.cookies["user_id"]],
+    user: req.session.user_id,
   };
 
   // Don't let non-logged in members submit post requests to /urls.
@@ -173,7 +178,7 @@ app.post("/urls", (req, res) => {
     console.log(`User is not authorized to access the create url page.`);
   } else {
 
-    urlDatabase[shortUrl] = {longURL: longUrl, userID: templateVars.user.id};
+    urlDatabase[shortUrl] = {longURL: longUrl, userID: templateVars.user};
 
     console.log(urlDatabase);
 
@@ -194,13 +199,13 @@ app.post('/urls/:id/delete', (req, res)=> {
   const { id } = req.params;
 
   // check to see if url id exists, if user is logged in and if the url belongs to the user before deleting.
-  if (!users[req.cookies["user_id"]]) {
+  if (!req.session.user_id) {
     res.send("Sorry, you need to be logged in to perform that action");
     console.log("Delete: canno't perform action as user is not logged in or registered.");
   } else if (!urlIdLookup(id)) {
     res.send("Sorry, we canno't find a url with that id");
     console.log("Delete: canno't find url with that id");
-  } else if (users[req.cookies["user_id"]].id !== urlDatabase[id].userID) {
+  } else if (req.session.user_id !== urlDatabase[id].userID) {
     res.send("Sorry, you don't have access to delete that url.");
     console.log("Delete: canno't perform action as that is not the user's url.");
   } else {
@@ -227,10 +232,10 @@ app.post('/urls/:id', (req, res) => {
   if (!urlIdLookup(id)) {
     res.send("Sorry, we canno't find a url with that id");
     console.log("Edit: canno't find url with that id");
-  } else if (!users[req.cookies["user_id"]]) {
+  } else if (!req.session.user_id) {
     res.send("Sorry, you need to be logged in to perform that action");
     console.log("Edit: canno't perform action as user is not logged in or registered.");
-  } else if (users[req.cookies["user_id"]].id !== urlDatabase[id].userID) {
+  } else if (req.session.user_id !== urlDatabase[id].userID) {
     res.send("Sorry, you don't have access to edit that url.");
     console.log("Edit: canno't perform action as that is not the user's url.");
   } else {
@@ -275,12 +280,17 @@ app.get("/", (req, res) => {
  */
 
 app.get("/urls" ,(req, res) => {
+  const userId = req.session.user_id;
+
+  console.log(userId);
+
   const templateVars = {
-    urls: urlsForUser(req.cookies["user_id"]),
-    user: users[req.cookies["user_id"]], // usr[12345]
+    urls: urlsForUser(userId), // user.id
+    user: users[req.session.user_id], // usr[12345]
   };
 
-  //res.send(templateVars.urls);
+  //console.log(req.session.user_id);
+
   res.render("urls_index.ejs", templateVars);
 });
 
@@ -292,8 +302,10 @@ app.get("/urls" ,(req, res) => {
 
 app.get("/urls/new", (req, res) => {
   const templateVars = {
-    user: users[req.cookies["user_id"]],
+    user: users[req.session.user_id],
   };
+
+  console.log("User ID: ", templateVars.user);
 
   if (!templateVars.user) {
     console.log("user is not logged in, sending to login page");
@@ -314,17 +326,18 @@ app.get("/urls/:id" ,(req, res) => {
   console.log(urlIdLookup(req.params.id));
   const templateVars = {
     id: req.params.id,
-    user: users[req.cookies["user_id"]],
+    user: users[req.session.user_id],
+    userId: req.session.user_id
   };
 
   // Check if user is logged in and if the short url exists before rendering the show template.
-  if (!req.cookies["user_id"]) {
+  if (!req.session.user_id) {
     res.redirect('/unauthorized');
     console.log("User canno't view page because they aren't logged in or registered.");
   } else if (!urlIdLookup(req.params.id)) {
     res.send("Sorry, the page you are looking for canno't be found. Please try again.");
     console.log("User canno't view page because the url id doesn't exist.");
-  } else if (templateVars.user.id !== urlDatabase[req.params.id].userID) {
+  } else if (templateVars.userId !== urlDatabase[req.params.id].userID) {
     res.send("Sorry, you dont own that url.");
     console.log("User canno't view page because they don't own the url");
   } else {
@@ -343,8 +356,9 @@ app.get("/urls/:id" ,(req, res) => {
 
 app.get('/login', (req, res) => {
   const templateVars = {
-    user: users[req.cookies["user_id"]],
+    user: req.session.user_id,
   };
+  console.log("User: ", templateVars.user);
   if (templateVars.user) {
     console.log("user is logged in, redirecting to urls");
     res.redirect('/urls');
@@ -361,22 +375,31 @@ app.get('/login', (req, res) => {
  */
 
 app.post('/login', (req, res) => {
+  console.log(req.body);
   const { loginEmail, loginPassword } = req.body;
   const user = userLookup(loginEmail);
-  const passwordCheck = bcrypt.compareSync(loginPassword, user.password);
-  // Chech that the user submitted both their email and password, that the email/user exists in our db
-  // and that they are using the correct password.
+
+  // if user does not submit email or password
   if (!loginEmail || !loginPassword) {
     res.status(400).send('Invalid credentials, please try again.');
-    //const usersPassword = user.password;
-  } else if (user === null) {
+  }
+
+  // compare submitted password against hash.
+  const passwordCheck = bcrypt.compareSync(loginPassword, user.password);
+
+  // Check that the email/user exists in our db
+  // and that they are using the correct password.
+  if (user === null) {
     res.status(403).send(`user ${loginEmail} could not be found in the database`);
     console.log(`user ${loginEmail} could not be found in the database`);
   } else if (!passwordCheck) {
     res.status(403).send('Invalid credentials, please try again.');
     console.log(`User submiited the incorrect password`);
   } else {
-    res.cookie("user_id", String(user.id));
+    //write a cookie
+    req.session.user_id = user.id;
+
+    //res.cookie("user_id", String(user.id));
     res.redirect('/urls');
     console.log("Credentials are a match. Logging the user in.");
   }
@@ -384,13 +407,13 @@ app.post('/login', (req, res) => {
 
 /**
  *
- * /logout - POST - Logs a user out of the app.
+ * /logout - POST - Logs a user out of the app by removing cookies.
  *
  */
 
 app.post('/logout', (req, res) => {
   console.log("Logged user out");
-  res.clearCookie("user_id");
+  req.session = null;
   res.redirect('/login');
 });
 
@@ -403,7 +426,7 @@ app.post('/logout', (req, res) => {
 app.get("/register", (req, res) => {
   const templateVars = {
     id: req.params.id,
-    user: users[req.cookies["user_id"]],
+    user: req.session.user_id,
   };
 
   if (templateVars.user) {
@@ -435,7 +458,9 @@ app.post('/register', (req, res) => {
     console.log(`Unable to register user: ${email} has already been registered.`);
   } else {
     users[userID] = { id: userID, email: email, password: hashedPassword };
-    res.cookie("user_id", userID);
+    //write cookie here
+    req.session.user_id = userID;
+    //res.cookie("user_id", userID);
 
     console.log(`Adding user: ${email} and setting user_id cookie.`);
     console.log(users);
@@ -453,7 +478,7 @@ app.post('/register', (req, res) => {
 app.get('/unauthorized', (req, res) => {
 
   const templateVars = {
-    user: users[req.cookies["user_id"]],
+    user: req.session.user_id,
   };
   res.render("unauthorizedUser.ejs", templateVars);
 });
