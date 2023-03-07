@@ -65,7 +65,7 @@
 * Express - cookie session
 * Bcrypt Password Hashing
 * Embedded Javascript Templating
-* Bootstrap omponenents
+* Bootstrap componenents
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
