@@ -52,7 +52,7 @@
 <br>
 <br>
 
-<h4>TinyApp was built to give you the power to keep your URLs short and succint. Our tool is perfect for transforming long and difficult to read URLs down to a 6 digit, alphanumeric string, allowing you to embedd them in your own prjects, blogs or tweets!<h4>
+<h4>TinyApp was built to give you the power to keep your URLs short and succinct. Our tool is perfect for transforming long and difficult to read URLs down to a 6 digit, alphanumeric string, allowing you to embed them in your own projects, blogs or tweets!<h4>
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
